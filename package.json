@@ -1,0 +1,58 @@
+{
+  "name": "issuepilot",
+  "version": "0.1.0",
+  "description": "Autonomous AI agent CLI that turns GitHub issues into detailed contributor starter briefs",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "issuepilot": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "brief": "tsx src/cli.ts",
+    "dev": "tsx watch src/cli.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "github-issue",
+    "ai-agent",
+    "starter-brief",
+    "good-first-issue",
+    "open-source",
+    "contributor-onboarding",
+    "octokit",
+    "openai",
+    "gemini",
+    "groq",
+    "openrouter",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ayesha-arbi/IssuePilot.git"
+  },
+  "author": "IssuePilot Team",
+  "license": "MIT",
+  "dependencies": {
+    "openai": "^4.77.0",
+    "@octokit/rest": "^21.0.2",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "simple-git": "^3.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

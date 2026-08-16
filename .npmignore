@@ -1,0 +1,9 @@
+src/
+tests/
+.cache/
+runs/
+.env
+.env.example
+tsconfig.json
+scratch/
+*.log
