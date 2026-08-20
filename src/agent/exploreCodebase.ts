@@ -95,9 +95,14 @@ export async function searchCodebase(
   if (fs.existsSync(cacheFile)) {
     try {
       const raw = fs.readFileSync(cacheFile, "utf-8");
-      const cached = JSON.parse(raw) as RelevantFile[];
-      memoryCache.set(cacheKey, cached);
-      return cached;
+      const cached = JSON.parse(raw) as { files: RelevantFile[]; cachedAt: number };
+      const TTL = 86400000; // 24 hours
+      if (Date.now() - cached.cachedAt < TTL) {
+        memoryCache.set(cacheKey, cached.files);
+        return cached.files;
+      }
+      // TTL expired — remove stale cache file
+      fs.unlinkSync(cacheFile);
     } catch {
       // ignore parse error, re-fetch
     }
@@ -116,7 +121,7 @@ export async function searchCodebase(
     memoryCache.set(cacheKey, ranked);
 
     try {
-      fs.writeFileSync(cacheFile, JSON.stringify(ranked, null, 2), "utf-8");
+      fs.writeFileSync(cacheFile, JSON.stringify({ files: ranked, cachedAt: Date.now() }, null, 2), "utf-8");
     } catch {
       // cache write failure non-fatal
     }

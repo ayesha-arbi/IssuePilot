@@ -16,10 +16,15 @@ Thank you for your interest in contributing to `issuepilot`!
    ```
 
 3. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Add your `GITHUB_TOKEN` and any optional LLM keys (Gemini, Groq, OpenRouter).
+    ```bash
+    cp .env.example .env
+    ```
+    Edit `.env` and add your `GITHUB_TOKEN` (required) and any optional LLM keys:
+    - `GEMINI_API_KEY` — Google Gemini (may fail with HTTP 400, use Groq/OpenRouter instead)
+    - `GROQ_API_KEY` — Groq (free and recommended)
+    - `OPENROUTER_API_KEY` — OpenRouter (free tier)
+    - `CEREBRAS_API_KEY`, `TOGETHER_API_KEY`, `DEEPSEEK_API_KEY`, `MISTRAL_API_KEY` — optional providers
+    - `LLM_API_KEY` / `LLM_BASE_URL` / `MODEL_FALLBACKS` — custom provider configuration
 
 4. **Build and test:**
    ```bash
