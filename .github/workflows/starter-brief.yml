@@ -1,8 +1,17 @@
+# ⚠️ This workflow auto-generates and posts a starter brief as a comment
+# when an issue is labeled "good first issue". The AI-generated content
+# has not been human-reviewed — maintainer verification recommended.
+# See: https://github.com/ayesha-arbi/IssuePilot/blob/main/CONTRIBUTING.md#unreviewed-ai-output
+
 name: Generate starter brief
 
 on:
   issues:
     types: [labeled]
+
+jobs:
+  brief:
+    if: github.event.label.name == 'good first issue'
 
 jobs:
   brief:

@@ -16,6 +16,8 @@ export function formatBriefAsMarkdown(brief: StarterBrief): string {
   const lines: string[] = [];
   lines.push(`### 🧭 Starter brief`);
   lines.push("");
+  lines.push(`***⚠️ AI-generated — verify before relying — can be wrong***`);
+  lines.push("");
   lines.push(`**What this issue is about:** ${brief.summary}`);
   lines.push("");
   lines.push(`**Likely cause:** ${brief.likelyCause}`);

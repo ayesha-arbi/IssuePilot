@@ -60,7 +60,7 @@ interface ProviderDef {
   requiresKey: boolean;
 }
 
-const PROVIDERS: Record<string, ProviderDef> = {
+export const PROVIDERS: Record<string, ProviderDef> = {
   groq: {
     prefix: "groq",
     baseUrl: "https://api.groq.com/openai/v1",
@@ -77,9 +77,9 @@ const PROVIDERS: Record<string, ProviderDef> = {
   },
   "github-models": {
     prefix: "github-models",
-    baseUrl: "https://models.inference.ai.azure.com",
+    baseUrl: "https://models.github.ai/inference",
     envVars: ["GITHUB_MODELS_KEY", "GITHUB_TOKEN"],
-    defaultModels: ["gpt-4o-mini", "Meta-Llama-3.1-70B-Instruct"],
+    defaultModels: ["gpt-4o-mini"],
     requiresKey: true,
   },
   cerebras: {

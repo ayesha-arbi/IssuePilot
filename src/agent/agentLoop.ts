@@ -3,7 +3,7 @@ import { TOOLS, executeTool } from "./tools.js";
 import { validateSubmitBrief } from "./validator.js";
 import { TranscriptLogger } from "./transcript.js";
 import { globalSpinner } from "../utils/spinner.js";
-import type { IssueData, StarterBrief } from "./types.js";
+import type { IssueData, RelatedHistoryItem, StarterBrief } from "./types.js";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 const SYSTEM_PROMPT = `You help first-time open source contributors understand a GitHub issue
@@ -29,6 +29,12 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
   let userPrompt = `Issue #${issue.number}: ${issue.title}\nURL: ${issue.url}\nLabels: ${issue.labels.join(", ") || "none"}\n\nBody:\n${issue.body || "(no description)"}`;
   if (issue.contributingGuidelines) {
     userPrompt += `\n\nRepo Contributing Guidelines Excerpt:\n${issue.contributingGuidelines}`;
+  }
+  if (issue.comments.length) {
+    userPrompt += `\n\nTop issue comments:\n${issue.comments
+      .slice(0, 5)
+      .map((c, i) => `${i + 1}. ${c.substring(0, 200)}`)
+      .join("\n")}`;
   }
 
   const baseMessages: ChatCompletionMessageParam[] = [
@@ -63,6 +69,7 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
     const messages: ChatCompletionMessageParam[] = [...baseMessages];
     let rePromptedValidation = false;
     let hasExecutedSearchTool = false;
+    let relatedHistory: RelatedHistoryItem[] = [];
 
     globalSpinner.update(`Running agent with model: ${spec}...`);
 
@@ -137,7 +144,7 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
           if (validation.valid && validation.data) {
             const brief: StarterBrief = {
               ...validation.data,
-              relatedHistory: [],
+              relatedHistory: [...relatedHistory],
             };
             const transcriptPath = logger.save("success", brief);
             globalSpinner.succeed(`Brief successfully generated! Transcript saved to ${transcriptPath}`);
@@ -189,6 +196,10 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
           if (call.function.name === "search_codebase" || call.function.name === "search_history") {
             hasExecutedSearchTool = true;
           }
+          if (call.function.name === "search_history") {
+            const searchResults = result as RelatedHistoryItem[];
+            relatedHistory = [...relatedHistory, ...searchResults];
+          }
 
           logger.logStep({
             turn: turn + 1,
@@ -220,7 +231,10 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
       });
 
       // Skip retries immediately for auth/key failures — no point retrying with the same bad key
-      const isAuthFailure = /Invalid API Key|API key not valid|INVALID_ARGUMENT|401|403/i.test(errMsg);
+      const isAuthFailure =
+        (err as { status?: number }).status === 401 ||
+        (err as { status?: number }).status === 403 ||
+        /Invalid API Key|API key not valid|INVALID_ARGUMENT/i.test(errMsg);
 
       modelAttempts++;
       if (!isAuthFailure && modelAttempts < 2) {
