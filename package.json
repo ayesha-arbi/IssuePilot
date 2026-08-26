@@ -18,6 +18,7 @@
     "brief": "tsx src/cli.ts",
     "dev": "tsx watch src/cli.ts",
     "test": "tsx --test tests/*.test.ts",
+    "check:models": "tsx scripts/check-models.ts",
     "prepublishOnly": "npm test && npm run build"
   },
   "keywords": [
