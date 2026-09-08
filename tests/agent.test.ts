@@ -149,3 +149,28 @@ test("Auth failure (400 Invalid API Key) skips model retries immediately", async
     llm.callLlmWithRetry = original;
   }
 });
+
+// — Test 5: Auth failure on generic 400 (no API key phrase in message) ————
+test("Auth failure on generic HTTP 400 skips model retries immediately", async () => {
+  const mockIssue: IssueData = {
+    owner: "o", repo: "r", number: 1, title: "T", body: "B",
+    labels: [], comments: [], url: "https://github.com/o/r/issues/1",
+  };
+
+  let attemptCount = 0;
+  const original = llm.callLlmWithRetry;
+  llm.callLlmWithRetry = async (modelConfig: any, _params: any) => {
+    attemptCount++;
+    const err: any = new Error("400 Bad Request");  // no "Invalid API Key" phrase
+    err.status = 400;
+    throw err;
+  };
+
+  try {
+    const { runAgent } = await import("../src/agent/agentLoop.js");
+    await runAgent(mockIssue, { maxTurns: 3, fallbackModels: "groq/llama-3.3-70b-versatile,groq/llama-3.1-8b-instant" }).catch(() => {});
+    assert.ok(attemptCount <= 2, `Expected ≤2 attempts (one per model, no retries), got ${attemptCount}`);
+  } finally {
+    llm.callLlmWithRetry = original;
+  }
+});

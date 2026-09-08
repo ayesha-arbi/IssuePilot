@@ -230,10 +230,10 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
         error: errMsg,
       });
 
-      // Skip retries immediately for auth/key failures — no point retrying with the same bad key
       const isAuthFailure =
         (err as { status?: number }).status === 401 ||
         (err as { status?: number }).status === 403 ||
+        (err as { status?: number }).status === 400 ||
         /Invalid API Key|API key not valid|INVALID_ARGUMENT/i.test(errMsg);
 
       modelAttempts++;
