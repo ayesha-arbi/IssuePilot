@@ -1,0 +1,1 @@
+node dist\cli.js init < $null

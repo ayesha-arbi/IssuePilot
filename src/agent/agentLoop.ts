@@ -54,6 +54,7 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
 
   let currentModelIndex = 0;
   let modelAttempts = 0;
+  let sawMissingModel = false;
 
   while (currentModelIndex < fallbackModelSpecs.length) {
     const spec = fallbackModelSpecs[currentModelIndex];
@@ -236,6 +237,11 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
         (err as { status?: number }).status === 400 ||
         /Invalid API Key|API key not valid|INVALID_ARGUMENT/i.test(errMsg);
 
+      // A model that no longer exists is a config problem, not a key problem
+      if (/does not exist|decommissioned|model_not_found|unknown model/i.test(errMsg)) {
+        sawMissingModel = true;
+      }
+
       modelAttempts++;
       if (!isAuthFailure && modelAttempts < 2) {
         globalSpinner.update(`Retrying model ${spec} (attempt ${modelAttempts + 1}/2)...`);
@@ -251,7 +257,13 @@ export async function runAgent(issue: IssueData, options: AgentLoopOptions = {})
     }
   }
 
-  const errMessage = `Agent failed to generate brief across all fallback models (${fallbackModelSpecs.join(", ")}).`;
+  let errMessage = `Agent failed to generate brief across all fallback models (${fallbackModelSpecs.join(", ")}).`;
+  if (sawMissingModel) {
+    errMessage +=
+      "\n\n⚠️  One or more of these models no longer exists at the provider — your API key is probably fine." +
+      "\n   Check what your key can reach, then pin working models, e.g.:" +
+      "\n   MODEL_FALLBACKS=groq/openai/gpt-oss-120b,groq/openai/gpt-oss-20b";
+  }
   const savedTranscriptPath = logger.save("failure", errMessage);
   globalSpinner.fail(`Agent execution failed.`);
   throw new Error(`${errMessage} Full transcript saved at: ${savedTranscriptPath}`);

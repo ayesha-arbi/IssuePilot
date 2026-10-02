@@ -1,20 +1,52 @@
 import readline from "readline";
 import fs from "fs";
 import path from "path";
+import { Readable } from "node:stream";
 
 import { PROVIDERS } from "../utils/llm.js";
 
-function askQuestion(query: string): Promise<string> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+function askQuestion(
+  query: string,
+  input: Readable = process.stdin,
+  output: NodeJS.WritableStream = process.stdout,
+): Promise<string | null> {
+  if (input.readableEnded) return Promise.resolve(null);
+
+  const rl = readline.createInterface({ input, output });
   return new Promise((resolve) => {
+    let answered = false;
     rl.question(query, (answer) => {
+      answered = true;
       rl.close();
       resolve(answer.trim());
     });
+    rl.on("close", () => {
+      if (!answered) resolve(null);
+    });
   });
+}
+
+const NON_INTERACTIVE_HELP = [
+  "❌ GITHUB_TOKEN is not set, and there is no input available to ask for one.",
+  "",
+  "Set it before running non-interactively:",
+  "  export GITHUB_TOKEN=ghp_xxx        # bash / zsh",
+  '  $env:GITHUB_TOKEN="ghp_xxx"        # PowerShell',
+  "  echo GITHUB_TOKEN=ghp_xxx > .env   # or use a .env file",
+  "",
+  "In GitHub Actions:  env:  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
+  "",
+  "Or run 'npx issuepilot init' in a normal terminal to set it up.",
+].join("\n");
+
+/** Asks until a non-empty answer is given; fails clearly if no input is available. */
+async function requireAnswer(query: string, emptyMsg: string): Promise<string> {
+  for (;;) {
+    const answer = await askQuestion(query);
+    if (answer === null) throw new Error(NON_INTERACTIVE_HELP);
+    if (answer) return answer;
+    console.log(emptyMsg);
+  }
 }
 
 export async function runInitWizard(): Promise<void> {
@@ -23,11 +55,10 @@ export async function runInitWizard(): Promise<void> {
 
   let githubToken = process.env.GITHUB_TOKEN || "";
   if (!githubToken) {
-    githubToken = await askQuestion("🔑 Enter your GitHub Personal Access Token (GITHUB_TOKEN) [required]: ");
-    while (!githubToken) {
-      console.log("❌ GITHUB_TOKEN is required to search repositories.");
-      githubToken = await askQuestion("🔑 Enter your GitHub Personal Access Token (GITHUB_TOKEN): ");
-    }
+    githubToken = await requireAnswer(
+      "🔑 Enter your GitHub Personal Access Token (GITHUB_TOKEN) [required]: ",
+      "❌ GITHUB_TOKEN is required to search repositories.",
+    );
   } else {
     console.log(`✔ Found existing GITHUB_TOKEN in environment.`);
   }
