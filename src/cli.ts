@@ -18,7 +18,12 @@ program
   .command("init")
   .description("Run the interactive setup wizard to configure GITHUB_TOKEN and AI API keys")
   .action(async () => {
-    await runInitWizard();
+    try {
+      await runInitWizard();
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
   });
 
 program
@@ -46,7 +51,12 @@ program
 
     if (!process.env.GITHUB_TOKEN) {
       console.log("⚠️  No GITHUB_TOKEN detected in environment.");
-      await runInitWizard();
+      try {
+        await runInitWizard();
+      } catch (err) {
+        console.error(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
       if (!process.env.GITHUB_TOKEN) {
         process.exit(1);
       }
